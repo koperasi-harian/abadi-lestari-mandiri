@@ -1,0 +1,287 @@
+<!-- Formulir Pengajuan Nasabah Baru Profesional + WA Admin + PDF + Frame Tanda Tangan -->
+<style>
+body { font-family:'Arial', sans-serif'; margin:0; padding:0; }
+.form-container { max-width:500px; margin:20px auto; padding:20px; background:#f9f9f9; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+h2 { text-align:center; color:#333; margin-bottom:20px; }
+input, select, button { width:100%; padding:12px 15px; margin:8px 0; border-radius:8px; border:1px solid #ccc; }
+button { border:none; cursor:pointer; font-size:16px; transition:0.3s; }
+button:hover { opacity:0.9; }
+label { display:flex; align-items:center; font-weight:bold; margin-top:10px; }
+label i { margin-right:8px; color:#007BFF; }
+.icon { font-size:18px; margin-right:5px; color:#007BFF; }
+#perhitungan { margin-top:15px; padding:10px; background:#e8f0fe; border-radius:10px; display:none; }
+#perhitungan p { margin:5px 0; }
+.preview-img { width:100%; max-height:200px; object-fit:contain; margin-top:5px; border-radius:10px; }
+#signaturePad { border:1px solid #ccc; border-radius:10px; width:100%; height:150px; cursor:crosshair; }
+.signature-actions { display:flex; justify-content:space-between; margin-top:5px; }
+#surat { margin-top:20px; padding:15px; background:#fff3cd; border-radius:10px; border:1px solid #ffeeba; display:none; }
+#surat h3 { text-align:center; margin-bottom:15px; }
+#sendWA { background:#25D366; color:white; margin-top:10px; border-radius:8px; padding:12px; font-size:16px; cursor:pointer; }
+#downloadPDF { background:#007bff; color:white; margin-top:10px; border-radius:8px; padding:12px; font-size:16px; cursor:pointer; }
+@media (max-width:600px){ .form-container{ padding:15px; } }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<div class="form-container">
+  <h2>Pengajuan Nasabah Baru</h2>
+  <form id="nasabahForm" enctype="multipart/form-data">
+    <label><i class="fas fa-user icon"></i> Nama Lengkap</label>
+    <input type="text" name="nama" placeholder="Masukkan nama lengkap" required>
+
+    <label><i class="fas fa-home icon"></i> Alamat</label>
+    <input type="text" name="alamat" placeholder="Masukkan alamat" required>
+
+    <label><i class="fas fa-id-card icon"></i> NIK</label>
+    <input type="text" name="nik" placeholder="Masukkan NIK" required>
+
+    <label><i class="fas fa-money-bill-wave icon"></i> Pinjaman</label>
+    <select name="pinjaman" id="pinjaman" required>
+      <option value="">-- Pilih Jumlah Pinjaman --</option>
+      <option value="100000">100.000</option>
+      <option value="200000">200.000</option>
+      <option value="300000">300.000</option>
+      <option value="400000">400.000</option>
+      <option value="500000">500.000</option>
+      <option value="600000">600.000</option>
+      <option value="700000">700.000</option>
+      <option value="800000">800.000</option>
+      <option value="900000">900.000</option>
+      <option value="1000000">1.000.000</option>
+    </select>
+
+    <label><i class="fas fa-calendar-alt icon"></i> Tempo</label>
+    <select name="tempo" id="tempo" required>
+      <option value="">-- Pilih Tempo --</option>
+      <option value="24">24 Hari</option>
+      <option value="30">30 Hari</option>
+    </select>
+
+    <label><i class="fas fa-id-card icon"></i> Foto KTP</label>
+    <input type="file" name="foto_ktp" accept="image/*" capture="environment" id="fotoKTP" required>
+    <img id="previewKTP" class="preview-img" style="display:none;">
+
+    <label><i class="fas fa-camera icon"></i> Foto Wajah</label>
+    <input type="file" name="foto_wajah" accept="image/*" capture="user" id="fotoWajah" required>
+    <img id="previewWajah" class="preview-img" style="display:none;">
+
+    <label><i class="fas fa-pencil-alt icon"></i> Tanda Tangan</label>
+    <canvas id="signaturePad"></canvas>
+    <div class="signature-actions">
+      <button type="button" id="clearSig">Hapus Tanda Tangan</button>
+    </div>
+
+    <div id="perhitungan">
+      <p><strong>Pinjaman yang dipilih:</strong> <span id="hasilPinjaman"></span></p>
+      <p><strong>Potongan:</strong> <span id="hasilPotongan"></span></p>
+      <p><strong>Terima Bersih:</strong> <span id="hasilTerimaBersih"></span></p>
+      <p><strong>Tempo yang dipilih:</strong> <span id="hasilTempo"></span></p>
+      <p><strong>Angsuran/hari:</strong> <span id="hasilAngsuran"></span></p>
+      <p><strong>Tabungan:</strong> <span id="hasilTabungan"></span></p>
+      <p><strong>Admin:</strong> <span id="hasilAdmin"></span></p>
+      <p><strong>Nilai yang dibayar:</strong> <span id="hasilDibayar"></span></p>
+    </div>
+
+    <button type="submit"><i class="fas fa-paper-plane icon"></i> Ajukan</button>
+  </form>
+
+  <div id="surat">
+    <h3>SURAT PERJANJIAN PINJAMAN</h3>
+    <p><strong>Nama:</strong> <span id="spNama"></span></p>
+    <p><strong>Alamat:</strong> <span id="spAlamat"></span></p>
+    <p><strong>NIK:</strong> <span id="spNIK"></span></p>
+    <p>Mengajukan pinjaman sebesar <strong><span id="spPinjaman"></span></strong> dengan tempo <strong><span id="spTempo"></span></strong>.</p>
+    <p>Potongan: <strong><span id="spPotongan"></span></strong></p>
+    <p>Terima Bersih: <strong><span id="spTerimaBersih"></span></strong></p>
+    <p>Angsuran/hari: <strong><span id="spAngsuran"></span></strong></p>
+    <p>Tabungan: <strong><span id="spTabungan"></span></strong></p>
+    <p>Admin: <strong><span id="spAdmin"></span></strong></p>
+    <p>Nilai yang dibayar: <strong><span id="spDibayar"></span></strong></p>
+
+    <!-- Peminjam dan tanda tangan -->
+    <p style="margin-top:15px;"><strong>Peminjam</strong></p>
+    <img id="spFrameSignature" style="width:100%; max-height:150px; margin-top:5px; border-radius:10px;" src="https://i.ibb.co/cXhLV2DF/Chat-GPT-Image-Sep-14-2025-11-44-52-AM.png" />
+    <img id="spSignature" style="width:100%; max-height:150px; border:1px solid #ccc; margin-top:5px; border-radius:10px;">
+    <p style="text-align:center; margin-top:5px; font-weight:bold;"><span id="spNamaSignature"></span></p>
+
+    <p style="margin-top:15px; margin-bottom:10px; font-style:italic; color:#333; font-size:14px; text-align:left;">
+      Dengan ini saya bersedia mengajukan pinjaman dengan sadar dan tanpa ada paksaan.
+    </p>
+
+    <p style="margin-top:10px; text-align:right;">Tanggal: <span id="spTanggal"></span></p>
+
+    <button id="sendWA"><i class="fab fa-whatsapp icon"></i> Kirim ke WhatsApp Admin</button>
+    <button id="downloadPDF"><i class="fas fa-file-pdf icon"></i> Download PDF</button>
+  </div>
+</div>
+
+<script>
+// ====== Perhitungan & Format ======
+function formatRupiah(value){ return 'Rp ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+const pinjamanSelect=document.getElementById('pinjaman');
+const tempoSelect=document.getElementById('tempo');
+
+function hitung(){
+  const pinjaman = Number(pinjamanSelect.value);
+  const tempo = Number(tempoSelect.value);
+  if(pinjaman && tempo){
+    const potongan = pinjaman*0.1;
+    const terimaBersih = pinjaman*0.9;
+    const angsuran = (pinjaman*1.2)/tempo;
+    const tabungan = pinjaman*0.05;
+    const admin = pinjaman*0.05;
+    const dibayar = pinjaman*1.2;
+
+    document.getElementById('hasilPinjaman').innerText = formatRupiah(pinjaman);
+    document.getElementById('hasilPotongan').innerText = formatRupiah(Math.round(potongan));
+    document.getElementById('hasilTerimaBersih').innerText = formatRupiah(Math.round(terimaBersih));
+    document.getElementById('hasilTempo').innerText = tempo + " Hari";
+    document.getElementById('hasilAngsuran').innerText = formatRupiah(Math.round(angsuran));
+    document.getElementById('hasilTabungan').innerText = formatRupiah(Math.round(tabungan));
+    document.getElementById('hasilAdmin').innerText = formatRupiah(Math.round(admin));
+    document.getElementById('hasilDibayar').innerText = formatRupiah(Math.round(dibayar));
+    document.getElementById('perhitungan').style.display = 'block';
+  }
+}
+
+pinjamanSelect.addEventListener('change', hitung);
+tempoSelect.addEventListener('change', hitung);
+
+// ====== Preview Foto ======
+function previewImage(input,previewId){
+  const preview=document.getElementById(previewId);
+  if(input.files && input.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>{ preview.src=e.target.result; preview.style.display='block'; }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+document.getElementById('fotoKTP').addEventListener('change',()=>previewImage(event.target,'previewKTP'));
+document.getElementById('fotoWajah').addEventListener('change',()=>previewImage(event.target,'previewWajah'));
+
+// ====== Tanda Tangan ======
+const canvas=document.getElementById('signaturePad');
+const ctx=canvas.getContext('2d');
+let drawing=false;
+canvas.addEventListener('mousedown',()=>drawing=true);
+canvas.addEventListener('mouseup',()=>drawing=false);
+canvas.addEventListener('mouseout',()=>drawing=false);
+canvas.addEventListener('mousemove',draw);
+canvas.addEventListener('touchstart',()=>drawing=true);
+canvas.addEventListener('touchend',()=>drawing=false);
+canvas.addEventListener('touchmove',drawTouch);
+document.getElementById('clearSig').addEventListener('click',()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+function draw(e){ if(!drawing) return; ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='black'; ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY); }
+function drawTouch(e){ e.preventDefault(); const rect=canvas.getBoundingClientRect(); const touch=e.touches[0]; const x=touch.clientX-rect.left; const y=touch.clientY-rect.top; if(!drawing) return; ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='black'; ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y); }
+
+// ====== Submit Form ======
+document.getElementById('nasabahForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  const formData=new FormData(this);
+  const nama=formData.get('nama');
+  const alamat=formData.get('alamat');
+  const nik=formData.get('nik');
+  const pinjaman=Number(formData.get('pinjaman'));
+  const tempo=Number(formData.get('tempo'));
+  const potongan=Math.round(pinjaman*0.1);
+  const terimaBersih=Math.round(pinjaman*0.9);
+  const angsuran=Math.round((pinjaman*1.2)/tempo);
+  const tabungan=Math.round(pinjaman*0.05);
+  const admin=Math.round(pinjaman*0.05);
+  const dibayar=Math.round(pinjaman*1.2);
+
+  document.getElementById('spNama').innerText=nama;
+  document.getElementById('spAlamat').innerText=alamat;
+  document.getElementById('spNIK').innerText=nik;
+  document.getElementById('spPinjaman').innerText=formatRupiah(pinjaman);
+  document.getElementById('spTempo').innerText=tempo+" Hari";
+  document.getElementById('spPotongan').innerText=formatRupiah(potongan);
+  document.getElementById('spTerimaBersih').innerText=formatRupiah(terimaBersih);
+  document.getElementById('spAngsuran').innerText=formatRupiah(angsuran);
+  document.getElementById('spTabungan').innerText=formatRupiah(tabungan);
+  document.getElementById('spAdmin').innerText=formatRupiah(admin);
+  document.getElementById('spDibayar').innerText=formatRupiah(dibayar);
+  document.getElementById('spTanggal').innerText=new Date().toLocaleDateString();
+  document.getElementById('spSignature').src=canvas.toDataURL();
+  document.getElementById('spNamaSignature').innerText = nama;
+  document.getElementById('surat').style.display='block';
+});
+
+// ====== Tombol WA Admin Otomatis Data Nasabah ======
+document.getElementById('sendWA').addEventListener('click', function(){
+  const adminNumber = "6281315070877";
+
+  const nama = document.getElementById('spNama').innerText;
+  const alamat = document.getElementById('spAlamat').innerText;
+  const nik = document.getElementById('spNIK').innerText;
+  const pinjaman = document.getElementById('spPinjaman').innerText;
+  const tempo = document.getElementById('spTempo').innerText;
+  const potongan = document.getElementById('spPotongan').innerText;
+  const terimaBersih = document.getElementById('spTerimaBersih').innerText;
+  const angsuran = document.getElementById('spAngsuran').innerText;
+  const tabungan = document.getElementById('spTabungan').innerText;
+  const adminFee = document.getElementById('spAdmin').innerText;
+  const dibayar = document.getElementById('spDibayar').innerText;
+
+  const message = `Data Pengajuan Nasabah:\n\nNama: ${nama}\nAlamat: ${alamat}\nNIK: ${nik}\nPinjaman: ${pinjaman}\nTempo: ${tempo}\nPotongan: ${potongan}\nTerima Bersih: ${terimaBersih}\nAngsuran/hari: ${angsuran}\nTabungan: ${tabungan}\nAdmin: ${adminFee}\nNilai Dibayar: ${dibayar}`;
+
+  const url = `https://wa.me/${adminNumber}?text=${encodeURIComponent(message)}`;
+  window.open(url,'_blank');
+});
+
+// ====== Tombol Download PDF dengan Frame Tanda Tangan ======
+document.getElementById('downloadPDF').addEventListener('click', async function(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const surat = document.getElementById('surat');
+  const margin = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const maxWidth = pageWidth - margin*2;
+  let y = 20;
+
+  surat.childNodes.forEach(node => {
+    if(node.nodeType !== Node.ELEMENT_NODE) return;
+    if(node.tagName.toLowerCase() === 'button') return;
+    if(node.tagName.toLowerCase() === 'img') return;
+
+    let text = node.innerText.trim();
+    if(!text) return;
+    let fontSize = (node.tagName.toLowerCase()==='h3')?16:12;
+    doc.setFontSize(fontSize);
+    const splitText = doc.splitTextToSize(text, maxWidth);
+    splitText.forEach(line => { doc.text(line, margin, y); y+=8; });
+    y += 4;
+  });
+
+  const frameImg = await loadImage('https://i.ibb.co/cXhLV2DF/Chat-GPT-Image-Sep-14-2025-11-44-52-AM.png');
+  const frameWidth = 60;
+  const frameHeight = 30;
+  doc.addImage(frameImg, 'PNG', margin, y+5, frameWidth, frameHeight);
+  y += frameHeight + 5;
+
+  const signatureImg = document.getElementById('spSignature').src;
+  if(signatureImg){
+    const sigWidth = 60;
+    const sigHeight = 30;
+    doc.addImage(signatureImg, 'PNG', margin, y+5, sigWidth, sigHeight);
+    y += sigHeight + 5;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(document.getElementById('spNamaSignature').innerText, margin, y+5);
+  }
+
+  doc.save("Surat_Pinjaman.pdf");
+});
+
+function loadImage(url){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.crossOrigin="Anonymous";
+    img.onload=()=>resolve(img);
+    img.onerror=err=>reject(err);
+    img.src=url;
+  });
+}
+</script>
+
